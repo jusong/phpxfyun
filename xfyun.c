@@ -217,7 +217,8 @@ PHP_METHOD(Xfyun, ise) {
 	int  cate    = read_sentence_cn;
 	char *text   = NULL;
 	char *audio  = NULL;
-	int  text_len, audio_len;
+	int  text_len       = 0;
+	int  audio_len      = 0;
 	const char *session_id    = NULL;
 	char *out_put       = NULL;
 	char *out_put_ptr   = NULL;
