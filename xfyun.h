@@ -35,6 +35,7 @@ enum {
   XFYUN_ERROR_TEXT_PUT          = 10009, /* 写入测评文本失败 */
   XFYUN_ERROR_AUDIO_WRITE       = 10010, /* 写入语音数据失败 */
   XFYUN_ERROR_GET_RESULT        = 10011, /* 获取结果失败 */
+  XFYUN_ERROR_INVALID_RES       = 10012, /* 无效结果 */
 };
 
 #endif	/* XFYUN_H */

@@ -201,6 +201,7 @@ PHP_METHOD(Xfyun, __construct) {
 	efree(lgi_param);
 	if (MSP_SUCCESS != ret)	{
 		throw_exception(XFYUN_ERROR_LOGIN, "MSPLogin failed [%d]", ret);
+		RETURN_NULL();
 	}
 }
 
@@ -209,6 +210,7 @@ PHP_METHOD(Xfyun, __destruct) {
 	int ret = MSPLogout();
 	if (MSP_SUCCESS != ret)	{
 		throw_exception(XFYUN_ERROR_LOGOUT, "MSPLogout failed [%d]", ret);
+		RETURN_NULL();
 	}
 }
 
@@ -220,8 +222,9 @@ PHP_METHOD(Xfyun, ise) {
 	int  text_len       = 0;
 	int  audio_len      = 0;
 	const char *session_id    = NULL;
-	char *out_put       = NULL;
-	char *out_put_ptr   = NULL;
+	const char *ssb    = NULL;
+	char *output       = NULL;
+	char *output_ptr   = NULL;
 	unsigned int  res_len    = 0;
 	int  audio_idx      = 0;
 	int  audio_stat     = MSP_AUDIO_SAMPLE_CONTINUE;
@@ -238,16 +241,23 @@ PHP_METHOD(Xfyun, ise) {
 
 	if (NULL == text || text_len <= 0 || NULL == audio || audio_len <= 0) {
 		throw_exception(XFYUN_ERROR_INVALID_PARAMS, "Invalid parameter", 0);
+		RETURN_NULL();
 	}
 
 	if (text_len > MAX_TEXT_LEN) {
 		throw_exception(XFYUN_ERROR_TOO_LONG_TEXT, "Too long text", 0);
+		RETURN_NULL();
 	}
 
 	//开启一次测评
-	session_id   = QISESessionBegin(ssb_param(cate), NULL, &ret);
+	if (NULL == (ssb = ssb_param(cate))) {
+		throw_exception(XFYUN_ERROR_INVALID_CATE, "Invalid category", 0);
+		RETURN_NULL();
+	}
+	session_id   = QISESessionBegin(ssb, NULL, &ret);
 	if (MSP_SUCCESS != ret)	{
 		throw_exception(XFYUN_ERROR_SESSION_BEGIN, "QISESessionBegin failed [%d]", ret);
+		RETURN_NULL();
 	}
 
 	//写入待评测的文本
@@ -301,7 +311,11 @@ PHP_METHOD(Xfyun, ise) {
 			}
 			
 			if (NULL != res) {
-				out_put = concat(out_put, res, res_len);
+				if (NULL == (output = concat(output, res, res_len))) {
+					errcode    = XFYUN_ERROR_ALLOC_MEMORY;
+					errmsg     = "Alloc memory failed";
+					goto ise_exit;
+				}
 			}
 		}
 		
@@ -351,25 +365,31 @@ PHP_METHOD(Xfyun, ise) {
 		}
 		
 		if (NULL != res) {		/* 读取到结果 */
-			out_put = concat(out_put, res, res_len);
+			if (NULL == (output = concat(output, res, res_len))) {
+				errcode    = XFYUN_ERROR_ALLOC_MEMORY;
+				errmsg     = "Alloc memory failed";
+				goto ise_exit;
+			}
 		} else {				/* 暂时没有测评结果，睡150毫秒 */
 			usleep(150000);
 		}
 	}
 	
-
  ise_exit:
 	ret = QISESessionEnd(session_id, NULL);
 	if (MSP_SUCCESS != ret) {
 		throw_exception(XFYUN_ERROR_SESSION_END, "QISESessionEnd failed [%d]", ret);
+		RETURN_NULL();
 	}
 	if (errcode) {
 		throw_exception(errcode, errmsg, inner_code);
-	}
-	if (NULL == out_put) {
 		RETURN_NULL();
 	}
-	RETURN_STRING(out_put, 0);
+	if (NULL == output) {
+		throw_exception(XFYUN_ERROR_INVALID_RES, "Invalid output", 0);
+		RETURN_NULL();
+	}
+	RETURN_STRING(output, 0);
 }
 
 void throw_exception(int errcode, const char *errmsg, int inner_code) {
@@ -404,7 +424,7 @@ const char* ssb_param(enum _category cate) {
 		return "sub=ise,category=read_sentence,language=en_us,aue=speex-wb;7,auf=audio/L16;rate=16000";
 		
 	default:					/* 未定义 */
-		throw_exception(XFYUN_ERROR_INVALID_CATE, "Invalid cate", 0);
+		return NULL;
 	}
 }
 
@@ -416,17 +436,15 @@ char *concat(char *dst, const char *src, int src_len) {
 	}
 
 	if (NULL == dst) {
-		printf("emalloc %d\n", src_len + 1);
 		if ((dst = emalloc(src_len + 1)) == NULL) {
-			throw_exception(XFYUN_ERROR_ALLOC_MEMORY, "Alloc memory failed", 0);
+			return NULL;
 		}
 		strncpy(dst, src, src_len);
 		dst[src_len] = '\0';
 	} else {
 		int dst_len = strlen(dst);
-		printf("erealloc %d\n", src_len + dst_len + 1);
 		if ((dst = erealloc(dst, dst_len + src_len + 1)) == NULL) {
-			throw_exception(XFYUN_ERROR_ALLOC_MEMORY, "Realloc memory failed", 0);
+			return NULL;
 		}
 		strncpy(dst + dst_len, src, src_len);
 		dst[dst_len + src_len] = '\0';
