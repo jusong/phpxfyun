@@ -1,21 +1,24 @@
 <?php
-$br = (php_sapi_name() == "cli")? "":"<br>";
 
-if(!extension_loaded('xfyun')) {
-	dl('xfyun.' . PHP_SHLIB_SUFFIX);
+#$txtFile = '/home/jiafd/ise_cn/cn_sentence.txt';
+$txtFile = '/home/jiafd/ise_cn/cn_sentence1.txt';
+$audioFile = '/home/jiafd/ise_cn/cn_sentence.wav';
+
+#$txtFile = '/home/jiafd/ise/bin/ise_cn/cn_sentence1.txt';
+#$audioFile = '/home/jiafd/ise/bin/ise_cn/cn_sentence.wav';
+
+$txtFile = '/tmp/txt';
+$txt = trim(file_get_contents($txtFile));
+$audio = file_get_contents($audioFile);
+$txt = chr(0xef).chr(0xbb).chr(0xbf).$txt;
+//exit;
+
+try {
+	    $xf = new xfyun('59cdf93b');
+		    $raw = $xf->ise($txt, $audio, xfyun::READ_SENTENCE_CN);
+			    $res = iconv('GBK', 'UTF-8', $raw);
+				    var_dump($raw, $res);
+} catch (Exception $e) {
+	    var_dump($e->getCode(), $e->getMessage());
 }
-$module = 'xfyun';
-$functions = get_extension_funcs($module);
-echo "Functions available in the test extension:$br\n";
-foreach($functions as $func) {
-    echo $func."$br\n";
-}
-echo "$br\n";
-$function = 'confirm_' . $module . '_compiled';
-if (extension_loaded($module)) {
-	$str = $function($module);
-} else {
-	$str = "Module $module is not compiled into PHP";
-}
-echo "$str\n";
-?>
+var_dump($txt, strlen($txt));
