@@ -14,12 +14,11 @@ dnl [  --with-xfyun             Include xfyun support])
 dnl Otherwise use enable:
 
 PHP_ARG_ENABLE(xfyun, whether to enable xfyun support,
-dnl Make sure that the comment is aligned:
 [  --enable-xfyun           Enable xfyun support])
 
 if test "$PHP_XFYUN" != "no"; then
   dnl Write more examples of tests here...
-  
+
   dnl # --with-xfyun -> check with-path
   dnl SEARCH_PATH="/usr/local /usr"     # you might want to change this
   dnl SEARCH_FOR="/include/xfyun.h"  # you most likely want to change this
@@ -65,6 +64,5 @@ if test "$PHP_XFYUN" != "no"; then
   PHP_ADD_LIBRARY(pthread, 1, XFYUN_SHARED_LIBADD)
   PHP_ADD_LIBRARY_WITH_PATH(msc, /usr/local/xfyun/lib, XFYUN_SHARED_LIBADD)
   PHP_SUBST(XFYUN_SHARED_LIBADD)
-
   PHP_NEW_EXTENSION(xfyun, xfyun.c, $ext_shared)
 fi

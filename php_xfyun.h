@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2013 The PHP Group                                |
+  | Copyright (c) 1997-2010 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -16,7 +16,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
+/* $Id: header 297205 2010-03-30 21:09:07Z johannes $ */
 
 #ifndef PHP_XFYUN_H
 #define PHP_XFYUN_H
@@ -42,9 +42,10 @@ PHP_RINIT_FUNCTION(xfyun);
 PHP_RSHUTDOWN_FUNCTION(xfyun);
 PHP_MINFO_FUNCTION(xfyun);
 
-PHP_METHOD(Xfyun, __construct);
-PHP_METHOD(Xfyun, __destruct);
-PHP_METHOD(Xfyun, ise);
+PHP_FUNCTION(confirm_xfyun_compiled);	/* For testing, remove later. */
+PHP_METHOD(xfyun, __construct);
+PHP_METHOD(xfyun, __destruct);
+PHP_METHOD(xfyun, ise);
 
 /* 
   	Declare any global variables you may need between the BEGIN

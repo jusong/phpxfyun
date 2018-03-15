@@ -2,7 +2,7 @@
   +----------------------------------------------------------------------+
   | PHP Version 5                                                        |
   +----------------------------------------------------------------------+
-  | Copyright (c) 1997-2013 The PHP Group                                |
+  | Copyright (c) 1997-2010 The PHP Group                                |
   +----------------------------------------------------------------------+
   | This source file is subject to version 3.01 of the PHP license,      |
   | that is bundled with this package in the file LICENSE, and is        |
@@ -16,7 +16,7 @@
   +----------------------------------------------------------------------+
 */
 
-/* $Id$ */
+/* $Id: header 297205 2010-03-30 21:09:07Z johannes $ */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -34,15 +34,16 @@ ZEND_DECLARE_MODULE_GLOBALS(xfyun)
 
 /* True global resources - no need for thread safety here */
 static int le_xfyun;
+zend_class_entry *xfyun_ce;
 
-ZEND_BEGIN_ARG_INFO(arg_construct, 1)
-ZEND_ARG_INFO(0, appid)
+ZEND_BEGIN_ARG_INFO(arg_construct, 0)
+        ZEND_ARG_INFO(0, appid)
 ZEND_END_ARG_INFO()
 
-ZEND_BEGIN_ARG_INFO(arg_ise, 4)
-ZEND_ARG_INFO(0, text)
-ZEND_ARG_INFO(0, audio)
-ZEND_ARG_INFO(0, cate)
+ZEND_BEGIN_ARG_INFO(arg_ise, 0)
+        ZEND_ARG_INFO(0, text)
+        ZEND_ARG_INFO(0, audio)
+        ZEND_ARG_INFO(0, cate)
 ZEND_END_ARG_INFO()
 
 /* {{{ xfyun_functions[]
@@ -50,18 +51,21 @@ ZEND_END_ARG_INFO()
  * Every user visible function must have an entry in xfyun_functions[].
  */
 const zend_function_entry xfyun_functions[] = {
-	{ NULL, NULL, NULL, 0, 0 }
+	PHP_FE(confirm_xfyun_compiled,	NULL)		/* For testing, remove later. */
+	{NULL, NULL, NULL}	/* Must be the last line in xfyun_functions[] */
 };
-const zend_function_entry xfyun_methods[] = {
-	PHP_ME(Xfyun, __construct, arg_construct, ZEND_ACC_CTOR|ZEND_ACC_PUBLIC)
-	PHP_ME(Xfyun, __destruct, NULL, ZEND_ACC_DTOR|ZEND_ACC_PUBLIC)
-	PHP_ME(Xfyun, ise, arg_ise, ZEND_ACC_PUBLIC)
-	{ NULL, NULL, NULL, 0, 0 }
-};
+/* }}} */
 
-void throw_exception(int, const char *, int);
-const char* ssb_param(enum _category);
-char *concat(char *, const char *, int);
+/* {{{ xfyun_methods[]
+ *  *
+ *   * Every user visible method must have an entry in xfyun_methods[].
+ *    */
+const zend_function_entry xfyun_methods[] = {
+	PHP_ME(xfyun, __construct, arg_construct, ZEND_ACC_CTOR|ZEND_ACC_PUBLIC)
+	PHP_ME(xfyun, __destruct, NULL, ZEND_ACC_DTOR|ZEND_ACC_PUBLIC)
+	PHP_ME(xfyun, ise, arg_ise, ZEND_ACC_PUBLIC)
+	{ NULL, NULL, NULL, 0, 0 }
+};
 /* }}} */
 
 /* {{{ xfyun_module_entry
@@ -109,24 +113,22 @@ static void php_xfyun_init_globals(zend_xfyun_globals *xfyun_globals)
 */
 /* }}} */
 
-zend_class_entry *Xfyun_ce;
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION(xfyun)
 {
 	/* If you have INI entries, uncomment these lines 
-	REGISTER_INI_ENTRIES();
-	*/
-    zend_class_entry Xfyun; 
-    INIT_CLASS_ENTRY(Xfyun, "Xfyun", xfyun_methods); //第二个参数为类名，第三个参数为类的函数列表 
-    Xfyun_ce = zend_register_internal_class(&Xfyun TSRMLS_CC); //注册类 
-    zend_declare_property_null(Xfyun_ce, "_appid", sizeof("_appid") - 1, ZEND_ACC_PRIVATE TSRMLS_CC);
-	zend_declare_class_constant_long(Xfyun_ce, "READ_SYLLABLE_CN", sizeof("READ_SYLLABLE_CN") - 1, read_syllable_cn TSRMLS_DC);
-	zend_declare_class_constant_long(Xfyun_ce, "READ_WORD_CN", sizeof("READ_WORD_CN") - 1, read_word_cn TSRMLS_DC);
-	zend_declare_class_constant_long(Xfyun_ce, "READ_SENTENCE_CN", sizeof("READ_SENTENCE_CN") - 1, read_sentence_cn TSRMLS_DC);
-	zend_declare_class_constant_long(Xfyun_ce, "READ_WORD_EN", sizeof("READ_WORD_EN") - 1, read_word_en TSRMLS_DC);
-	zend_declare_class_constant_long(Xfyun_ce, "READ_SENTENCE_EN", sizeof("READ_SENTENCE_EN") - 1, read_sentence_en TSRMLS_DC);
+	   REGISTER_INI_ENTRIES();
+	   */
+	zend_class_entry xfyun; 
+	INIT_CLASS_ENTRY(xfyun, "xfyun", xfyun_methods); 
+	xfyun_ce = zend_register_internal_class(&xfyun TSRMLS_CC); 
 
+	zend_declare_property_null(xfyun_ce, "_appid", sizeof("_appid") - 1, ZEND_ACC_PRIVATE TSRMLS_CC);
+	zend_declare_class_constant_long(xfyun_ce, "READ_SYLLABLE_CN", sizeof("READ_SYLLABLE_CN") - 1, read_syllable_cn TSRMLS_CC);
+	zend_declare_class_constant_long(xfyun_ce, "READ_WORD_CN", sizeof("READ_WORD_CN") - 1, read_word_cn TSRMLS_CC);
+	zend_declare_class_constant_long(xfyun_ce, "READ_SENTENCE_CN", sizeof("READ_SENTENCE_CN") - 1, read_sentence_cn TSRMLS_CC);
+	zend_declare_class_constant_long(xfyun_ce, "READ_CHAPTER_CN", sizeof("READ_CHAPTER_CN") - 1, read_chapter_cn TSRMLS_CC);
 	return SUCCESS;
 }
 /* }}} */
@@ -182,274 +184,18 @@ PHP_MINFO_FUNCTION(xfyun)
 /* Every user-visible function in PHP should document itself in the source */
 /* {{{ proto string confirm_xfyun_compiled(string arg)
    Return a string to confirm that the module is compiled in */
-PHP_METHOD(Xfyun, __construct) {
+PHP_FUNCTION(confirm_xfyun_compiled)
+{
+	char *arg = NULL;
+	int arg_len, len;
+	char *strg;
 
-	zval *appid = NULL;
-	zend_class_entry *ce;
-	int  ret;
-	
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &appid) == FAILURE) { //获取构造函数参数 
-		WRONG_PARAM_COUNT; 
-    }
-	
-	ce = Z_OBJCE_P(getThis());
-	zend_update_property(ce, getThis(), "_appid", sizeof("_appid") - 1, appid TSRMLS_CC);
-
-	char *lgi_param = emalloc(20);
-	sprintf(lgi_param, "appid = %s", Z_LVAL_P(appid));
-	ret = MSPLogin(NULL, NULL, lgi_param);
-	efree(lgi_param);
-	if (MSP_SUCCESS != ret)	{
-		throw_exception(XFYUN_ERROR_LOGIN, "MSPLogin failed [%d]", ret);
-		RETURN_NULL();
-	}
-}
-
-PHP_METHOD(Xfyun, __destruct) {
-
-	int ret = MSPLogout();
-	if (MSP_SUCCESS != ret)	{
-		throw_exception(XFYUN_ERROR_LOGOUT, "MSPLogout failed [%d]", ret);
-		RETURN_NULL();
-	}
-}
-
-PHP_METHOD(Xfyun, ise) {
-
-	int  cate    = read_sentence_cn;
-	char *text   = NULL;
-	char *audio  = NULL;
-	int  text_len       = 0;
-	int  audio_len      = 0;
-	const char *session_id    = NULL;
-	const char *ssb    = NULL;
-	char *output       = NULL;
-	char *output_ptr   = NULL;
-	unsigned int  res_len    = 0;
-	int  audio_idx      = 0;
-	int  audio_stat     = MSP_AUDIO_SAMPLE_CONTINUE;
-	int  ep_status      = MSP_EP_LOOKING_FOR_SPEECH;
-	int  rec_status     = MSP_REC_STATUS_SUCCESS;
-	int  ret            = 0;
-	int  errcode        = 0;
-	char *errmsg        = NULL;
-	int  inner_code     = 0;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|l", &text, &text_len, &audio, &audio_len, &cate) == FAILURE) {
-		WRONG_PARAM_COUNT; 
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &arg, &arg_len) == FAILURE) {
+		return;
 	}
 
-	if (NULL == text || text_len <= 0 || NULL == audio || audio_len <= 0) {
-		throw_exception(XFYUN_ERROR_INVALID_PARAMS, "Invalid parameter", 0);
-		RETURN_NULL();
-	}
-
-	if (text_len > MAX_TEXT_LEN) {
-		throw_exception(XFYUN_ERROR_TOO_LONG_TEXT, "Too long text", 0);
-		RETURN_NULL();
-	}
-
-	//开启一次测评
-	if (NULL == (ssb = ssb_param(cate))) {
-		throw_exception(XFYUN_ERROR_INVALID_CATE, "Invalid category", 0);
-		RETURN_NULL();
-	}
-	session_id   = QISESessionBegin(ssb, NULL, &ret);
-	if (MSP_SUCCESS != ret)	{
-		throw_exception(XFYUN_ERROR_SESSION_BEGIN, "QISESessionBegin failed [%d]", ret);
-		RETURN_NULL();
-	}
-
-	//写入待评测的文本
-	ret = QISETextPut(session_id, text, (unsigned int)text_len, NULL);
-	if (MSP_SUCCESS != ret)	{
-		errcode    = XFYUN_ERROR_TEXT_PUT;
-		errmsg     = "QISETextPut failed [%d]";
-		inner_code = ret;
-		goto ise_exit;
-	}
-
-	//写入待评测的音频
-	while (1) {
-		unsigned int len = 10 * FRAME_LEN;// 每次写入200ms音频(16k，16bit)：1帧音频20ms，10帧=200ms。16k采样率的16位音频，一帧的大小为640Byte
-
-		if (0 == audio_idx) {
-			audio_stat = MSP_AUDIO_SAMPLE_FIRST;
-		} else {
-			audio_stat = MSP_AUDIO_SAMPLE_CONTINUE;
-		}
-		
-		if (audio_len <= 2 * len) {
-			len           = audio_len;
-		}
-		if (len <= 0) {
-			break;
-		}
-
-		//写入语音数据
-		ret = QISEAudioWrite(session_id, (const void *)&audio[audio_idx], len, audio_stat, &ep_status, &rec_status);
-		if (MSP_SUCCESS != ret) {
-			errcode    = XFYUN_ERROR_AUDIO_WRITE;
-			errmsg     = "QISEAudioWrite failed [%d]";
-			inner_code = ret;
-			goto ise_exit;
-		}
-
-		audio_idx += (long)len;
-		audio_len -= (long)len;
-
-		//有测评结果返回，读取结果
-		if (MSP_REC_STATUS_SUCCESS == rec_status) {
-			
-			const char *res = QISEGetResult(session_id, &res_len, &rec_status, &ret);
-			
-			if (MSP_SUCCESS != ret) {
-				errcode    = XFYUN_ERROR_GET_RESULT;
-				errmsg     = "QISEGetResult failed [%d]";
-				inner_code = ret;
-				goto ise_exit;
-			}
-			
-			if (NULL != res) {
-				if (NULL == (output = concat(output, res, res_len))) {
-					errcode    = XFYUN_ERROR_ALLOC_MEMORY;
-					errmsg     = "Alloc memory failed";
-					goto ise_exit;
-				}
-			}
-		}
-		
-		if (MSP_EP_AFTER_SPEECH == ep_status) { /* 检测到音频的后端点，后继的音频会被MSC忽略 */
-			break;
-		} else if (
-			MSP_EP_TIMEOUT == ep_status ||
-			MSP_EP_ERROR == ep_status ||
-			MSP_EP_MAX_SPEECH == ep_status
-		) {
-			
-			/*****************************************
-			* MSP_EP_TIMEOUT = 4        超时
-			* MSP_EP_ERROR = 5          出现错误
-			* MSP_EP_MAX_SPEECH = 6     音频过大
-			*****************************************/
-			
-			errcode    = XFYUN_ERROR_AUDIO_WRITE;
-			errmsg     = "QISEAudioWrite failed, End Point error[%d]";
-			inner_code = ep_status;
-			goto ise_exit;
-		}
-
-		//如果是实时采集音频,可以省略此操作。5KB大小的16KPCM持续的时间是160毫秒
-		usleep(200000);
-	}
-
-	//写入最后一句结束
-	ret = QISEAudioWrite(session_id, (const void *)NULL, 0, 4, &ep_status, &rec_status);
-	if (MSP_SUCCESS != ret)	{
-		errcode    = XFYUN_ERROR_AUDIO_WRITE;
-		errmsg     = "QISEAudioWrite failed [%d]";
-		inner_code = ret;
-		goto ise_exit;
-	}
-
-	//读取结果
-	while (MSP_REC_STATUS_COMPLETE != rec_status) {
-		
-		const char *res = QISEGetResult(session_id, &res_len, &rec_status, &ret);
-		
-		if (MSP_SUCCESS != ret) {
-			errcode    = XFYUN_ERROR_GET_RESULT;
-			errmsg     = "QISEGetResult failed [%d]";
-			inner_code = ret;
-			goto ise_exit;
-		}
-		
-		if (NULL != res) {		/* 读取到结果 */
-			if (NULL == (output = concat(output, res, res_len))) {
-				errcode    = XFYUN_ERROR_ALLOC_MEMORY;
-				errmsg     = "Alloc memory failed";
-				goto ise_exit;
-			}
-		} else {				/* 暂时没有测评结果，睡150毫秒 */
-			usleep(150000);
-		}
-	}
-	
- ise_exit:
-	ret = QISESessionEnd(session_id, NULL);
-	if (MSP_SUCCESS != ret) {
-		throw_exception(XFYUN_ERROR_SESSION_END, "QISESessionEnd failed [%d]", ret);
-		RETURN_NULL();
-	}
-	if (errcode) {
-		throw_exception(errcode, errmsg, inner_code);
-		RETURN_NULL();
-	}
-	if (NULL == output) {
-		throw_exception(XFYUN_ERROR_INVALID_RES, "Invalid output", 0);
-		RETURN_NULL();
-	}
-	RETURN_STRING(output, 0);
-}
-
-void throw_exception(int errcode, const char *errmsg, int inner_code) {
-
-	if (0 != inner_code) {
-		int  errmsg_len = strlen(errmsg) + 10;
-		char errmsg_buf[errmsg_len];
-		sprintf(errmsg_buf, errmsg, inner_code);
-		zend_throw_exception(zend_exception_get_default(), (const char*)errmsg_buf, errcode TSRMLS_CC);
-	} else {
-		zend_throw_exception(zend_exception_get_default(), errmsg, errcode TSRMLS_CC);
-	}
-}
-
-const char* ssb_param(enum _category cate) {
-
-	switch (cate) {
-		
-	case read_syllable_cn:		/* 中文字 */
-		return "sub=ise,category=read_syllable,language=zh_cn,aue=speex-wb;7,auf=audio/L16;rate=16000";
-		
-	case read_word_cn:			/* 中文词语 */
-		return "sub=ise,category=read_word,language=zh_cn,aue=speex-wb;7,auf=audio/L16;rate=16000";
-		
-	case read_sentence_cn:		/* 中文句子 */
-		return "sub=ise,category=read_sentence,language=zh_cn,aue=speex-wb;7,auf=audio/L16;rate=16000";
-		
-	case read_word_en:			/* 英文单词 */
-		return "sub=ise,category=read_word,language=en_us,aue=speex-wb;7,auf=audio/L16;rate=16000";
-		
-	case read_sentence_en:		/* 英文句子 */
-		return "sub=ise,category=read_sentence,language=en_us,aue=speex-wb;7,auf=audio/L16;rate=16000";
-		
-	default:					/* 未定义 */
-		return NULL;
-	}
-}
-
-//将src字符串拼接到*dst后面，dst为空时自动申请内存
-char *concat(char *dst, const char *src, int src_len) {
-
-	if (NULL == src || src_len <= 0) {
-		return dst;
-	}
-
-	if (NULL == dst) {
-		if ((dst = emalloc(src_len + 1)) == NULL) {
-			return NULL;
-		}
-		strncpy(dst, src, src_len);
-		dst[src_len] = '\0';
-	} else {
-		int dst_len = strlen(dst);
-		if ((dst = erealloc(dst, dst_len + src_len + 1)) == NULL) {
-			return NULL;
-		}
-		strncpy(dst + dst_len, src, src_len);
-		dst[dst_len + src_len] = '\0';
-	}
-	return dst;
+	len = spprintf(&strg, 0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "xfyun", arg);
+	RETURN_STRINGL(strg, len, 0);
 }
 /* }}} */
 /* The previous line is meant for vim and emacs, so it can correctly fold and 
@@ -458,6 +204,239 @@ char *concat(char *dst, const char *src, int src_len) {
    follow this convention for the convenience of others editing your code.
 */
 
+PHP_METHOD(xfyun, __construct) {
+
+        zval *appid;
+        int  ret;
+
+        if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &appid) == FAILURE) { //获取构造函数参数 
+                WRONG_PARAM_COUNT; 
+        }
+        zend_update_property(xfyun_ce, getThis(), "_appid", sizeof("_appid") - 1, appid TSRMLS_CC);
+
+        //初始化msc，用户登录
+        char *lgi_param = emalloc(20);
+        sprintf(lgi_param, "appid = %s", Z_STRVAL_P(appid));
+        ret = MSPLogin(NULL, NULL, lgi_param);
+        efree(lgi_param);
+        if (MSP_SUCCESS != ret) {
+			THROW_EXCEPTION(XFYUN_ERROR_LOGIN, "MSPLogin failed[%d]", ret);
+        }
+}
+
+PHP_METHOD(xfyun, __destruct) {
+
+        int ret = MSPLogout();
+        if (MSP_SUCCESS != ret) {
+                THROW_EXCEPTION(XFYUN_ERROR_LOGOUT, "MSPLogout failed[%d]", ret);
+        }
+}
+
+PHP_METHOD(xfyun, ise) {
+
+        char            *text			= NULL;
+		char            *audio			= NULL;
+		char            *output			= NULL;
+		char            errmsg[MAX_LEN]	= {'\0'};
+        int             text_len		= 0;
+		int             audio_len		= 0;
+		int             ret				= 0;
+		int             errcode			= 0;
+		int				inner_code		= 0;
+		int				audio_idx		= 0;
+        const char		*session_id		= NULL;
+		const char		*ssb			= NULL;
+        unsigned int	res_len			= 0;
+        int				audio_stat		= MSP_AUDIO_SAMPLE_CONTINUE;    //音频发送状态
+        int				ep_status       = MSP_EP_LOOKING_FOR_SPEECH;    //端点检测状态
+        int				rec_status      = MSP_REC_STATUS_SUCCESS;       //测评器状态
+        int				cate            = read_sentence_cn;             //评测类型，默认是中文句子
+
+        if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "ss|l", &text, &text_len, &audio, &audio_len, &cate) == FAILURE) {
+                WRONG_PARAM_COUNT;
+        }
+
+        if (!text_len || !audio_len) {
+                THROW_EXCEPTION(XFYUN_ERROR_INVALID_PARAMS, "Invalid parameter", 1);
+        }
+
+        if (text_len > MAX_TEXT_LEN) {
+                THROW_EXCEPTION(XFYUN_ERROR_TOO_LONG_TEXT, "Too long text");
+        }
+
+        //开启一次测评
+        if (NULL == (ssb = ssb_param(cate))) {
+                THROW_EXCEPTION(XFYUN_ERROR_INVALID_CATE, "Invalid category");
+        }
+        session_id = QISESessionBegin(ssb, NULL, &ret);
+        if (MSP_SUCCESS != ret) {
+                THROW_EXCEPTION(XFYUN_ERROR_SESSION_BEGIN, "QISESessionBegin failed [%d]", ret);
+        }
+
+        //写入待评测的文本
+        ret = QISETextPut(session_id, text, (unsigned int)text_len, NULL);
+        if (MSP_SUCCESS != ret) {
+                ISE_EXIT(XFYUN_ERROR_TEXT_PUT, "QISETextPut failed", ret);
+        }
+        //写入待评测的音频
+        audio_idx = 0;
+		int write_count = 0;
+		int read_count = 0;
+        while (1) {
+                unsigned int len = 10 * FRAME_LEN;// 每次写入200ms音频(16k，16bit)，6400byte=6.25K：1帧音频20ms，10帧=200ms。16k采样率的16位音频，一帧的大小为640Byte
+
+                        if (0 == audio_idx) {
+                                audio_stat = MSP_AUDIO_SAMPLE_FIRST;
+                        } else {
+                                audio_stat = MSP_AUDIO_SAMPLE_CONTINUE;
+                        }
+
+                if (audio_len <= 2 * len) {
+                        len           = audio_len;
+                }
+                if (len <= 0) {
+                        break;
+                }
+
+                //写入语音数据
+				write_count++;
+                ret = QISEAudioWrite(session_id, (const void *)(audio + audio_idx), len, audio_stat, &ep_status, &rec_status);
+                if (MSP_SUCCESS != ret) {
+                        ISE_EXIT(XFYUN_ERROR_AUDIO_WRITE, "QISEAudioWrite failed", ret);
+                }
+
+                audio_idx += len;
+                audio_len -= len;
+
+                //有测评结果返回，读取结果
+                if (MSP_REC_STATUS_SUCCESS == rec_status) {
+
+					read_count++;
+                        const char *res = QISEGetResult(session_id, &res_len, &rec_status, &ret);
+                        if (MSP_SUCCESS != ret) {
+                                ISE_EXIT(XFYUN_ERROR_GET_RESULT, "QISEGetResult failed", ret);
+                        }
+
+                        if (NULL != res) {
+                                if (-1 == concat(&output, res, res_len)) {
+                                        ISE_EXIT(XFYUN_ERROR_ALLOC_MEMORY, "Alloc memory failed", 0);
+                                }
+                        }
+                }
+                if (MSP_EP_AFTER_SPEECH == ep_status) { /* 检测到音频的后端点，后继的音频会被MSC忽略 */
+                        break;
+                } else if (
+                                MSP_EP_TIMEOUT == ep_status ||
+                                MSP_EP_ERROR == ep_status ||
+                                MSP_EP_MAX_SPEECH == ep_status
+                                ) {
+
+                        /*****************************************
+                         * MSP_EP_TIMEOUT = 4        超时
+                         * MSP_EP_ERROR = 5          出现错误
+                         * MSP_EP_MAX_SPEECH = 6     音频过大
+                         *****************************************/
+
+                        ISE_EXIT(XFYUN_ERROR_AUDIO_WRITE, "QISEAudioWrite failed, End Point error", ep_status);
+                }
+
+                //如果是实时采集音频,可以省略此操作。5KB大小的16KPCM持续的时间是160毫秒
+                usleep(200000);
+        }
+        //写入最后一句结束                                                                                                
+        ret = QISEAudioWrite(session_id, (const void *)NULL, 0, MSP_AUDIO_SAMPLE_LAST, &ep_status, &rec_status);
+        if (MSP_SUCCESS != ret) {
+                ISE_EXIT(XFYUN_ERROR_AUDIO_WRITE, "QISEAudioWrite failed", ret);
+        }
+
+        //读取结果
+        while (MSP_REC_STATUS_COMPLETE != rec_status) {
+
+					read_count++;
+                const char *res = QISEGetResult(session_id, &res_len, &rec_status, &ret);
+                if (MSP_SUCCESS != ret) {
+                        ISE_EXIT(XFYUN_ERROR_GET_RESULT, "QISEGetResult failed", ret);
+                }
+
+                if (NULL != res) {      /* 读取到结果 */
+                        if (-1 == concat(&output, res, res_len)) {
+                                ISE_EXIT(XFYUN_ERROR_ALLOC_MEMORY, "Alloc memory failed", 0);
+                        }
+                } else {                /* 暂时没有测评结果，睡150毫秒 */
+                        usleep(150000);
+                }
+        }
+ise_exit:
+		ret = QISESessionEnd(session_id, NULL);
+		if (MSP_SUCCESS != ret) {
+			if (NULL != output) {
+				efree(output);
+			}
+			THROW_EXCEPTION(XFYUN_ERROR_SESSION_END, "QISESessionEnd failed[%d]", ret);
+		}
+		if (errcode) {
+			if (NULL != output) {
+				efree(output);
+			}
+			THROW_EXCEPTION(errcode, errmsg);
+		}
+		if (NULL == output) {
+			RETURN_NULL();
+		}
+		php_printf("write_count: %d\n", write_count);
+		php_printf("read_count: %d\n", read_count);
+		RETURN_STRING(output, 0);
+}
+
+const char* ssb_param(enum _category cate) {
+
+	switch (cate) {
+
+		case read_syllable_cn:      /* 中文字 */
+                        return "sub=ise,category=read_syllable,language=zh_cn,aue=speex-wb;7,auf=audio/L16;rate=16000";
+
+                case read_word_cn:          /* 中文词语 */
+                        return "sub=ise,category=read_word,language=zh_cn,aue=speex-wb;7,auf=audio/L16;rate=16000";
+
+                case read_sentence_cn:      /* 中文句子 */
+                        return "sub=ise,category=read_sentence,language=zh_cn,aue=speex-wb;7,auf=audio/L16;rate=16000";
+                case read_chapter_cn:       /* 中文篇章 */
+                        return "sub=ise,category=read_chapter,language=zh_cn,aue=speex-wb;7,auf=audio/L16;rate=16000";
+
+                default:                    /* 未定义 */
+                        return NULL;
+        }
+}
+
+//将src字符串拼接到*dst后面，dst为空时自动申请内存
+int concat(char **dst, const char *src, int src_len) {
+
+        if (NULL == src || src_len <= 0) {
+                return -1;
+        }
+
+		char *tmp_dst;
+        int dst_len;
+
+        if (NULL == *dst) {
+                if ((tmp_dst = emalloc(src_len + 1)) == NULL) {
+                        return -1;
+                }
+                dst_len = 0;
+                memcpy(tmp_dst, src, src_len);
+                tmp_dst[src_len] = '\0';
+                *dst = tmp_dst;
+        } else {
+                dst_len = strlen(*dst);
+                if ((tmp_dst = erealloc(*dst, dst_len + src_len + 1)) == NULL) {
+                        return -1;
+                }
+                memcpy(tmp_dst + dst_len, src, src_len);
+                tmp_dst[dst_len + src_len] = '\0';
+                *dst = tmp_dst;
+        }
+        return dst_len + src_len;
+}
 
 /*
  * Local variables:
