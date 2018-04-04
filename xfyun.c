@@ -380,12 +380,13 @@ ise_exit:
 			}
 			THROW_EXCEPTION(errcode, errmsg);
 		}
-		if (NULL == output) {
-			RETURN_NULL();
+
+		array_init(return_value);
+		add_next_index_string(return_value, session_id, 1);
+		if (NULL != output) {
+			add_next_index_string(return_value, output, 1);
+			efree(output);
 		}
-		php_printf("write_count: %d\n", write_count);
-		php_printf("read_count: %d\n", read_count);
-		RETURN_STRING(output, 0);
 }
 
 const char* ssb_param(enum _category cate) {
