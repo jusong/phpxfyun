@@ -124,7 +124,7 @@ PHP_MINIT_FUNCTION(xfyun)
 	INIT_CLASS_ENTRY(xfyun, "xfyun", xfyun_methods); 
 	xfyun_ce = zend_register_internal_class(&xfyun TSRMLS_CC); 
 
-	zend_declare_property_null(xfyun_ce, "_appid", sizeof("_appid") - 1, ZEND_ACC_PRIVATE TSRMLS_CC);
+	//zend_declare_property_null(xfyun_ce, "_appid", sizeof("_appid") - 1, ZEND_ACC_PRIVATE TSRMLS_CC);
 	zend_declare_class_constant_long(xfyun_ce, "READ_SYLLABLE_CN", sizeof("READ_SYLLABLE_CN") - 1, read_syllable_cn TSRMLS_CC);
 	zend_declare_class_constant_long(xfyun_ce, "READ_WORD_CN", sizeof("READ_WORD_CN") - 1, read_word_cn TSRMLS_CC);
 	zend_declare_class_constant_long(xfyun_ce, "READ_SENTENCE_CN", sizeof("READ_SENTENCE_CN") - 1, read_sentence_cn TSRMLS_CC);
@@ -204,6 +204,7 @@ PHP_FUNCTION(confirm_xfyun_compiled)
    follow this convention for the convenience of others editing your code.
 */
 
+const char *lgi_param = "appid = 59ccc4d4";
 PHP_METHOD(xfyun, __construct) {
 
         zval *appid;
@@ -212,13 +213,10 @@ PHP_METHOD(xfyun, __construct) {
         if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &appid) == FAILURE) { //获取构造函数参数 
                 WRONG_PARAM_COUNT; 
         }
-        zend_update_property(xfyun_ce, getThis(), "_appid", sizeof("_appid") - 1, appid TSRMLS_CC);
+//        zend_update_property(xfyun_ce, getThis(), "_appid", sizeof("_appid") - 1, appid TSRMLS_CC);
 
         //初始化msc，用户登录
-        char *lgi_param = emalloc(20);
-        sprintf(lgi_param, "appid = %s", Z_STRVAL_P(appid));
         ret = MSPLogin(NULL, NULL, lgi_param);
-        efree(lgi_param);
         if (MSP_SUCCESS != ret) {
 			THROW_EXCEPTION(XFYUN_ERROR_LOGIN, "MSPLogin failed[%d]", ret);
         }
@@ -226,11 +224,14 @@ PHP_METHOD(xfyun, __construct) {
 
 PHP_METHOD(xfyun, __destruct) {
 
-        int ret = MSPLogout();
-        if (MSP_SUCCESS != ret) {
-                THROW_EXCEPTION(XFYUN_ERROR_LOGOUT, "MSPLogout failed[%d]", ret);
-        }
+	php_printf("__destruct called\n");
+	int ret = MSPLogout();
+	if (MSP_SUCCESS != ret) {
+		THROW_EXCEPTION(XFYUN_ERROR_LOGOUT, "MSPLogout failed[%d]", ret);
+	}
+	php_printf("__destruct end\n");
 }
+
 
 PHP_METHOD(xfyun, ise) {
 
@@ -257,7 +258,7 @@ PHP_METHOD(xfyun, ise) {
         }
 
         if (!text_len || !audio_len) {
-                THROW_EXCEPTION(XFYUN_ERROR_INVALID_PARAMS, "Invalid parameter", 1);
+                THROW_EXCEPTION(XFYUN_ERROR_INVALID_PARAMS, "Invalid parameter");
         }
 
         if (text_len > MAX_TEXT_LEN) {
@@ -280,8 +281,10 @@ PHP_METHOD(xfyun, ise) {
         }
         //写入待评测的音频
         audio_idx = 0;
+#ifdef DEBUG_MODE
 		int write_count = 0;
 		int read_count = 0;
+#endif
         while (1) {
                 unsigned int len = 10 * FRAME_LEN;// 每次写入200ms音频(16k，16bit)，6400byte=6.25K：1帧音频20ms，10帧=200ms。16k采样率的16位音频，一帧的大小为640Byte
 
@@ -299,7 +302,9 @@ PHP_METHOD(xfyun, ise) {
                 }
 
                 //写入语音数据
+#ifdef DEBUG_MODE
 				write_count++;
+#endif
                 ret = QISEAudioWrite(session_id, (const void *)(audio + audio_idx), len, audio_stat, &ep_status, &rec_status);
                 if (MSP_SUCCESS != ret) {
                         ISE_EXIT(XFYUN_ERROR_AUDIO_WRITE, "QISEAudioWrite failed", ret);
@@ -311,7 +316,9 @@ PHP_METHOD(xfyun, ise) {
                 //有测评结果返回，读取结果
                 if (MSP_REC_STATUS_SUCCESS == rec_status) {
 
+#ifdef DEBUG_MODE
 					read_count++;
+#endif
                         const char *res = QISEGetResult(session_id, &res_len, &rec_status, &ret);
                         if (MSP_SUCCESS != ret) {
                                 ISE_EXIT(XFYUN_ERROR_GET_RESULT, "QISEGetResult failed", ret);
@@ -352,7 +359,9 @@ PHP_METHOD(xfyun, ise) {
         //读取结果
         while (MSP_REC_STATUS_COMPLETE != rec_status) {
 
+#ifdef DEBUG_MODE
 					read_count++;
+#endif
                 const char *res = QISEGetResult(session_id, &res_len, &rec_status, &ret);
                 if (MSP_SUCCESS != ret) {
                         ISE_EXIT(XFYUN_ERROR_GET_RESULT, "QISEGetResult failed", ret);
@@ -383,8 +392,10 @@ ise_exit:
 		if (NULL == output) {
 			RETURN_NULL();
 		}
+#ifdef DEBUG_MODE
 		php_printf("write_count: %d\n", write_count);
 		php_printf("read_count: %d\n", read_count);
+#endif
 		RETURN_STRING(output, 0);
 }
 

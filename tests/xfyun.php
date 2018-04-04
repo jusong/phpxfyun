@@ -6,6 +6,7 @@ $audioFile = 'cn_sentence.wav';
 $txt = trim(file_get_contents($txtFile));
 $audio = file_get_contents($audioFile);
 $txt = chr(0xef).chr(0xbb).chr(0xbf).$txt;
+//$audio = substr($audio, 44);
 
 try {
 	$xf = new xfyun('59cdf93b');
