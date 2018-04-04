@@ -30,5 +30,8 @@ modules
 package.xml
 rdkafka-*.tgz
 run-tests.php
-tests/*
 tmp-php.ini
+*~
+tags
+msc
+tests/msc
